@@ -79,7 +79,8 @@ function setUpGame() {
   deck = [];
   players.dealer.hand = [];
   players.player.hand = [];
-
+  wait(2000);
+  console.clear();
   initializeDeck();
   shuffle(deck);
   prompt("Shuffling the deck and dealing the cards...");
@@ -92,7 +93,7 @@ function dealCard(player, numberOfCards = 1) {
   while (numberOfCards > 0) {
     if (player === 'player') {
       let newCard = deck.pop();
-      prompt(`The card you are dealt is: ${newCard[1]}`);
+      prompt(`The card you are dealt is: ${displayCard(newCard)}`);
       players.player.hand.push(newCard);
     } else if (player === 'dealer') {
       players.dealer.hand.push(deck.pop());
@@ -101,18 +102,46 @@ function dealCard(player, numberOfCards = 1) {
   }
 }
 
-function displayHand(player, hand) {
-  addVerticalSpace();
+function displayCard(card) {
+  let suits = {
+    H: 'Hearts',
+    D: 'Diamonds',
+    C: 'Clubs',
+    S: 'Spades'
+  };
+  let faceCards = {
+    J: 'Jack',
+    Q: 'Queen',
+    K: 'King',
+    A: 'Ace'
+  };
+  let value = card[1];
+  if (FACE_CARDS.includes(value)) {
+    value = faceCards[value];
+  }
+  return (value + ' of ' + suits[card[0]]);
+}
 
+// eslint-disable-next-line max-lines-per-function
+function displayHand(player, hand, visible = false) {
+  addVerticalSpace();
   if (player === 'player') {
     prompt('Your cards are:');
-    console.log(hand);
+    hand.forEach(card => {
+      console.log(displayCard(card));
+    });
     prompt(`The total value of your hand is ${calculateValueOfHand(hand)}`);
+  } else if (player === 'dealer' && visible === true) {
+    prompt("The dealer's cards are:");
+    hand.forEach(card => {
+      console.log(displayCard(card));
+    });
+    prompt(`The total value of the dealer's hand is ${calculateValueOfHand(hand)}`);
   } else {
     prompt("The dealer's cards are:");
     let visibleCard = hand[0];
     let numHiddenCards = hand.slice(1).length;
-    console.log(visibleCard);
+    console.log(displayCard(visibleCard));
     console.log(`And ${numHiddenCards} hidden card(s).`);
   }
 }
@@ -179,6 +208,39 @@ function busted(hand) {
   return calculateValueOfHand(hand) > GOAL_VALUE;
 }
 
+function displayEndingHands() {
+  console.log('==============');
+  prompt('FINAL SCORE:');
+  displayHand('dealer', players.dealer.hand, true);
+  addVerticalSpace(1);
+  displayHand('player',players.player.hand );
+  console.log('==============');
+
+}
+// eslint-disable-next-line max-lines-per-function
+function displayWinner() {
+  let playerScore = calculateValueOfHand(players.player.hand);
+  let dealerScore = calculateValueOfHand(players.dealer.hand);
+  if (busted(players.player.hand)) {
+    prompt(`BUST! Your hand is over ${GOAL_VALUE}.`);
+    prompt('Dealer wins!');
+    players.dealer.score += 1;
+  } else if (busted(players.dealer.hand)) {
+    prompt(`BUST! The dealer's hand is over ${GOAL_VALUE}.`);
+    prompt('You win!');
+    players.player.score += 1;
+  } else if (playerScore > dealerScore) {
+    prompt('You win!');
+    players.player.score += 1;
+  } else if (playerScore < dealerScore) {
+    prompt('Dealer wins!');
+    players.dealer.score += 1;
+  } else {
+    prompt("It's a tie!");
+  }
+}
+
+
 function displayScore() {
   prompt('NUMBER OF GAMES WON:');
   prompt(`You: ${players.player.score}`);
@@ -195,6 +257,14 @@ function bestOfFive() {
   }
 }
 
+function playAgain() {
+
+  prompt('Would you like to play again? (y or n)');
+  let answer = readline.question().trim().toLowerCase();
+  validateInputYesNo(answer);
+
+  return answer[0];
+}
 
 //         -----------------Start of Game ----------------------------------
 
@@ -251,48 +321,14 @@ while (true) {
   //Display results
   addVerticalSpace(2);
   wait(2000);
-  let playerScore = calculateValueOfHand(players.player.hand);
-  let dealerScore = calculateValueOfHand(players.dealer.hand);
-
-  console.log('==============');
-  prompt(`Dealer has:`);
-  console.log(players.dealer.hand);
-  addVerticalSpace(1);
-  prompt(`You have:`);
-  console.log(players.player.hand);
-  console.log('==============');
+  displayEndingHands();
 
   addVerticalSpace(2);
   wait(2000);
-  console.log('==============');
-  prompt('FINAL SCORE:');
-  prompt(`You: ${playerScore}`);
-  prompt(`Dealer: ${dealerScore}`);
-  console.log('==============');
+  displayWinner();
+
   addVerticalSpace(2);
   wait(2000);
-
-  if (busted(players.player.hand)) {
-    prompt('BUST! Your hand is over ${GOAL_VALUE}.');
-    prompt('Dealer wins!');
-    players.dealer.score += 1;
-  } else if (busted(players.dealer.hand)) {
-    prompt("BUST! The dealer's hand is over ${GOAL_VALUE}.");
-    prompt('You win!');
-    players.player.score += 1;
-  } else {
-    //Compare cards and declare the winner
-    if (playerScore > dealerScore) {
-      prompt('You win!');
-      players.player.score += 1;
-    } else if (playerScore < dealerScore) {
-      prompt('Dealer wins!');
-      players.dealer.score += 1;
-    } else {
-      prompt("It's a tie!");
-    }
-  }
-
   if (keepScore === true) {
     console.log('==============');
     displayScore();
@@ -304,19 +340,12 @@ while (true) {
       break;
     }
     console.log('==============');
+    wait(2000);
+    addVerticalSpace(2);
   }
 
-  addVerticalSpace(2);
-  wait(2000);
-  prompt('Would you like to play again? (y or n)');
-  answer = readline.question().trim().toLowerCase();
-  validateInputYesNo(answer);
 
-  addVerticalSpace(2);
-  wait(1000);
-
-  answer = answer[0];
-  if (answer !== 'y') break;
+  if (playAgain() !== 'y') break;
 
 }
 
